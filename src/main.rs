@@ -54,11 +54,11 @@ impl event::EventHandler<GameError> for MainState {
         if self.ball.position.x + Ball::RADIUS >= width
             || self.ball.position.x - Ball::RADIUS <= 0.0
         {
-            self.ball.direction.x = self.ball.direction.x * -1.0;
+            self.ball.direction.x *= -1.0;
         }
 
         if self.ball.position.y >= height || self.ball.position.y <= 0.0 {
-            self.ball.direction.y = self.ball.direction.y * -1.0;
+            self.ball.direction.y *= -1.0;
         }
 
         Ok(())
@@ -97,12 +97,11 @@ pub fn main() -> GameResult {
 fn get_resource_directory() -> PathBuf {
     // We add the CARGO_MANIFEST_DIR/resources to the resource paths
     // so that ggez will look in our cargo project directory for files.
-    let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+    if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
         path
     } else {
         path::PathBuf::from("./resources")
-    };
-    resource_dir
+    }
 }
