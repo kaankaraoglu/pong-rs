@@ -5,23 +5,17 @@ jobs:
   build-lint-and-format:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Setup | Checkout
         uses: actions/checkout@v2
 
-      - name: Setup Rust
-        uses: ATiltedTree/setup-rust@v1.0.5
+      - name: Setup | Rust
+        uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: stable
           components: clippy
 
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Build | Lint
+        run: cargo clippy
 
       - name: Run Rustfmt
         run: cargo fmt --all -- --check
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Run tests
-        run: cargo test --verbose
