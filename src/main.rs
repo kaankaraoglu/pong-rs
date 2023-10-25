@@ -3,7 +3,6 @@ extern crate ggez;
 use std::path::PathBuf;
 use std::{env, path};
 
-use ggez::context::HasMut;
 use ggez::glam::{vec2, Vec2};
 use ggez::graphics::Color;
 use ggez::{event, graphics, Context, GameError, GameResult};
