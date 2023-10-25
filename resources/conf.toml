@@ -1,0 +1,26 @@
+# Game configuration
+
+[window_mode]
+width = 1000
+height = 900
+maximized = false
+fullscreen_type = "Windowed"
+borderless = false
+transparent = false
+min_width = 1
+min_height = 1
+max_width = 0
+max_height = 0
+resizable = false
+visible = true
+resize_on_scale_factor_change = false
+
+[window_setup]
+title = "PONG!"
+samples = "One"
+vsync = true
+icon = ""
+srgb = true
+
+[backend]
+type = 'All'
