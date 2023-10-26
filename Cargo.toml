@@ -1,8 +1,10 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 name = "pong-rust"
 version = "0.1.0"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Kaan Karaoglu"]
+license-file = "LICENSE.md"
 
 [dependencies]
 ggez = "0.9.3"
