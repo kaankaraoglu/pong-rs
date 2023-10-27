@@ -10,4 +10,5 @@ pub struct Paddle {
 impl Paddle {
     pub const WIDTH: f32 = 15.0;
     pub const HEIGHT: f32 = 100.0;
+    pub const DEFAULT_X_OFFSET: f32 = 15.0;
 }
