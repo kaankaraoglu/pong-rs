@@ -5,6 +5,7 @@ name = "pong-rust"
 version = "0.1.0"
 authors = ["Kaan Karaoglu"]
 license-file = "LICENSE.md"
+edition = "2021"
 
 [dependencies]
 ggez = "0.9.3"
