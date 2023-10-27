@@ -1,18 +1,21 @@
 extern crate ggez;
 
+use ggez::event::EventHandler;
 use ggez::glam::{vec2, Vec2};
 use ggez::graphics::{Canvas, Color};
 use ggez::input::keyboard::{KeyCode, KeyInput};
-use ggez::{event, graphics, Context, GameError, GameResult};
+use ggez::{graphics, timer, Context, GameError, GameResult};
 
-use ball::Ball;
-use paddle::Paddle;
+use crate::ball::Ball;
+use crate::input::InputState;
+use crate::paddle::Paddle;
 
 pub struct Pong {
     frames: usize,
     ball: Ball,
     player_paddle: Paddle,
     opponent_paddle: Paddle,
+    input: InputState,
 }
 
 impl Pong {
@@ -36,7 +39,6 @@ impl Pong {
         };
 
         // Create player's paddle
-
         let player_paddle = Paddle {
             position: vec2(PLAYER_PADDLE_STARTING_POSITION_X_OFFSET, height / 2.0),
             mesh: graphics::Mesh::new_rectangle(
@@ -68,26 +70,43 @@ impl Pong {
             ball,
             player_paddle,
             opponent_paddle,
+            input: Default::default(),
         })
     }
 }
 
-impl event::EventHandler<GameError> for Pong {
-    // TODO: MAKE THE BALL REACT TO THE PADDLE.
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        let (width, height) = _ctx.gfx.drawable_size();
+fn handle_player_input(ctx: &Context, paddle: &mut Paddle, input: &InputState, frame_time: f32) {
+    let (_drawable_width, drawable_height) = ctx.gfx.drawable_size();
 
-        self.ball.position.x += self.ball.direction.x * self.ball.speed;
-        self.ball.position.y += self.ball.direction.y * self.ball.speed;
+    if input.up {
+        let mut next_pos = vec2(0.0, paddle.position.y - paddle.speed * frame_time);
 
-        if self.ball.position.x + Ball::RADIUS >= width
-            || self.ball.position.x - Ball::RADIUS <= 0.0
-        {
-            self.ball.direction.x *= -1.0;
+        if next_pos.y <= 0.0 {
+            next_pos.y = 0.0 + Paddle::DEFAULT_X_OFFSET
         }
 
-        if self.ball.position.y >= height || self.ball.position.y <= 0.0 {
-            self.ball.direction.y *= -1.0;
+        paddle.position.y = next_pos.y;
+    }
+
+    if input.down {
+        let mut next_pos = vec2(0.0, paddle.position.y + paddle.speed * frame_time);
+
+        if next_pos.y + Paddle::HEIGHT >= drawable_height {
+            next_pos.y = drawable_height - Paddle::HEIGHT - Paddle::DEFAULT_X_OFFSET
+        }
+
+        paddle.position.y = next_pos.y;
+    }
+}
+
+impl EventHandler<GameError> for Pong {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        const DESIRED_FPS: u32 = 60;
+        const FRAME_TIME: f32 = 1.0 / (DESIRED_FPS as f32);
+
+        // https://gameprogrammingpatterns.com/game-loop.html#do-you-own-the-game-loop,-or-does-the-platform
+        while ctx.time.check_update_time(DESIRED_FPS) {
+            handle_player_input(ctx, &mut self.player_paddle, &self.input, FRAME_TIME);
         }
 
         Ok(())
@@ -108,13 +127,20 @@ impl event::EventHandler<GameError> for Pong {
         // Draw opponent's paddle
         canvas.draw(&self.opponent_paddle.mesh, self.opponent_paddle.position);
 
+        // Render!
         canvas.finish(ctx)?;
 
         // Count FPS and log.
         self.frames += 1;
         if (self.frames % 100) == 0 {
-            println!("FPS: {}", ctx.time.fps().ceil());
+            println!("FPS: {}", ctx.time.fps().floor());
         }
+
+        // Yield the timeslice.
+        // This tells the OS that we're done using the CPU but it should get back to this program
+        // as soon as it can. This ideally prevents the game from using 100% CPU all the time even
+        // if vsync is off. The actual behavior can be a little platform-specific.
+        timer::yield_now();
 
         Ok(())
     }
@@ -125,38 +151,29 @@ impl event::EventHandler<GameError> for Pong {
         input: KeyInput,
         _repeated: bool,
     ) -> GameResult {
-        let (_screen_width, screen_height) = ctx.gfx.drawable_size();
-
         match input.keycode {
             Some(KeyCode::Up) => {
-                let mut next_pos = vec2(
-                    0.0,
-                    self.player_paddle.position.y - self.player_paddle.speed,
-                );
-
-                if next_pos.y <= 0.0 {
-                    next_pos.y = 0.0 + Paddle::DEFAULT_X_OFFSET
-                }
-
-                self.player_paddle.position.y = next_pos.y;
+                self.input.up = true;
             }
             Some(KeyCode::Down) => {
-                let mut next_pos = vec2(
-                    0.0,
-                    self.player_paddle.position.y + self.player_paddle.speed,
-                );
-
-                if next_pos.y + Paddle::HEIGHT >= screen_height {
-                    next_pos.y = screen_height - Paddle::HEIGHT - Paddle::DEFAULT_X_OFFSET
-                }
-
-                self.player_paddle.position.y = next_pos.y;
+                self.input.down = true;
             }
             Some(KeyCode::Escape) => {
                 ctx.request_quit();
             }
             _ => (), // Do nothing
         }
+        Ok(())
+    }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, input: KeyInput) -> GameResult {
+        // When the key is lifted, we set both up and down input to false because,
+        // we want paddle to stop moving.
+        if let Some(KeyCode::Up | KeyCode::Down) = input.keycode {
+            self.input.up = false;
+            self.input.down = false;
+        }
+
         Ok(())
     }
 }
