@@ -1,7 +1,7 @@
 extern crate ggez;
 
 use ggez::glam::{vec2, Vec2};
-use ggez::graphics::{Canvas, Color, Rect};
+use ggez::graphics::{Canvas, Color};
 use ggez::input::keyboard::{KeyCode, KeyInput};
 use ggez::{event, graphics, Context, GameError, GameResult};
 
@@ -12,12 +12,13 @@ pub struct Pong {
     frames: usize,
     ball: Ball,
     player_paddle: Paddle,
+    opponent_paddle: Paddle,
 }
 
 impl Pong {
     pub fn new(ctx: &mut Context) -> GameResult<Pong> {
         const PLAYER_PADDLE_STARTING_POSITION_X_OFFSET: f32 = 20.0;
-        let (_width, height) = ctx.gfx.drawable_size();
+        let (width, height) = ctx.gfx.drawable_size();
 
         // Create the ball
         let ball = Ball {
@@ -34,34 +35,45 @@ impl Pong {
             direction: vec2(1.0, 0.75),
         };
 
-        let paddle_mesh = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            Rect {
-                x: 0.0,
-                y: 0.0,
-                w: Paddle::WIDTH,
-                h: Paddle::HEIGHT,
-            },
-            Color::WHITE,
-        )?;
-
         // Create player's paddle
+
         let player_paddle = Paddle {
             position: vec2(PLAYER_PADDLE_STARTING_POSITION_X_OFFSET, height / 2.0),
-            mesh: paddle_mesh,
-            speed: 50.0,
+            mesh: graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                Paddle::BOUNDS,
+                Paddle::COLOR,
+            )?,
+            speed: Paddle::SPEED,
+        };
+
+        // Create opponent's paddle
+        let opponent_paddle = Paddle {
+            position: vec2(
+                width - Paddle::WIDTH - PLAYER_PADDLE_STARTING_POSITION_X_OFFSET,
+                height / 20.0,
+            ),
+            mesh: graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                Paddle::BOUNDS,
+                Paddle::COLOR,
+            )?,
+            speed: Paddle::SPEED,
         };
 
         Ok(Pong {
             frames: 0,
             ball,
             player_paddle,
+            opponent_paddle,
         })
     }
 }
 
 impl event::EventHandler<GameError> for Pong {
+    // TODO: MAKE THE BALL REACT TO THE PADDLE.
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         let (width, height) = _ctx.gfx.drawable_size();
 
@@ -92,6 +104,9 @@ impl event::EventHandler<GameError> for Pong {
 
         // Draw player's paddle
         canvas.draw(&self.player_paddle.mesh, self.player_paddle.position);
+
+        // Draw opponent's paddle
+        canvas.draw(&self.opponent_paddle.mesh, self.opponent_paddle.position);
 
         canvas.finish(ctx)?;
 

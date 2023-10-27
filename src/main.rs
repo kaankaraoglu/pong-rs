@@ -17,6 +17,9 @@ pub fn main() -> GameResult {
     // Create the context and event loop
     let (mut ctx, event_loop) = context_builder.build()?;
 
-    let state = Pong::new(&mut ctx)?;
-    event::run(ctx, event_loop, state)
+    // Create the state of the game
+    let game = Pong::new(&mut ctx)?;
+
+    // Run the main loop
+    event::run(ctx, event_loop, game)
 }
