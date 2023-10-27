@@ -11,6 +11,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install ALSA library
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
       - name: Setup Rust
         uses: ATiltedTree/setup-rust@v1.0.5
         with:
