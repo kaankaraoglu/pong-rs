@@ -75,7 +75,8 @@ impl Pong {
     }
 }
 
-fn handle_player_input(ctx: &Context, paddle: &mut Paddle, input: &InputState, frame_time: f32) {
+fn handle_player_input(ctx: &Context, paddle: &mut Paddle, input: &InputState, desired_fps: u32) {
+    let frame_time: f32 = 1.0 / (desired_fps as f32);
     let (_drawable_width, drawable_height) = ctx.gfx.drawable_size();
 
     if input.up {
@@ -102,12 +103,13 @@ fn handle_player_input(ctx: &Context, paddle: &mut Paddle, input: &InputState, f
 impl EventHandler<GameError> for Pong {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         const DESIRED_FPS: u32 = 60;
-        const FRAME_TIME: f32 = 1.0 / (DESIRED_FPS as f32);
 
         // https://gameprogrammingpatterns.com/game-loop.html#do-you-own-the-game-loop,-or-does-the-platform
         while ctx.time.check_update_time(DESIRED_FPS) {
-            handle_player_input(ctx, &mut self.player_paddle, &self.input, FRAME_TIME);
+            handle_player_input(ctx, &mut self.player_paddle, &self.input, DESIRED_FPS);
         }
+
+        handle_ball_movement(ctx, &mut self.ball);
 
         Ok(())
     }
@@ -175,5 +177,20 @@ impl EventHandler<GameError> for Pong {
         }
 
         Ok(())
+    }
+}
+
+fn handle_ball_movement(ctx: &mut Context, ball: &mut Ball) {
+    let (width, height) = ctx.gfx.drawable_size();
+
+    ball.position.x += ball.direction.x * ball.speed;
+    ball.position.y += ball.direction.y * ball.speed;
+
+    if ball.position.x + Ball::RADIUS >= width || ball.position.x - Ball::RADIUS <= 0.0 {
+        ball.direction.x *= -1.0;
+    }
+
+    if ball.position.y >= height || ball.position.y <= 0.0 {
+        ball.direction.y *= -1.0;
     }
 }
