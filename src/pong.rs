@@ -9,6 +9,7 @@ use ggez::{graphics, timer, Context, GameError, GameResult};
 use crate::ball::Ball;
 use crate::input::InputState;
 use crate::paddle::Paddle;
+use crate::utils::{handle_ball_movement, handle_player_input};
 
 pub struct Pong {
     frames: usize,
@@ -21,47 +22,47 @@ pub struct Pong {
 impl Pong {
     pub fn new(ctx: &mut Context) -> GameResult<Pong> {
         const PLAYER_PADDLE_STARTING_POSITION_X_OFFSET: f32 = 20.0;
+        const OPPONENT_PADDLE_STARTING_POSITION_X_OFFSET: f32 = -20.0;
         let (width, height) = ctx.gfx.drawable_size();
 
         // Create the ball
+        let ball_mesh = graphics::Mesh::new_circle(
+            ctx,
+            graphics::DrawMode::fill(),
+            Vec2::ZERO,
+            Ball::RADIUS,
+            0.2,
+            Color::RED,
+        )?;
+
         let ball = Ball {
             position: vec2(50.0, 50.0),
-            mesh: graphics::Mesh::new_circle(
-                ctx,
-                graphics::DrawMode::fill(),
-                Vec2::ZERO,
-                Ball::RADIUS,
-                0.2,
-                Color::RED,
-            )?,
-            speed: 4.5,
+            mesh: ball_mesh,
+            speed: 15.0,
             direction: vec2(1.0, 0.75),
         };
 
         // Create player's paddle
+        let paddle_mesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            Paddle::BOUNDS,
+            Paddle::COLOR,
+        )?;
+
         let player_paddle = Paddle {
             position: vec2(PLAYER_PADDLE_STARTING_POSITION_X_OFFSET, height / 2.0),
-            mesh: graphics::Mesh::new_rectangle(
-                ctx,
-                graphics::DrawMode::fill(),
-                Paddle::BOUNDS,
-                Paddle::COLOR,
-            )?,
+            mesh: paddle_mesh.clone(),
             speed: Paddle::SPEED,
         };
 
         // Create opponent's paddle
         let opponent_paddle = Paddle {
             position: vec2(
-                width - Paddle::WIDTH - PLAYER_PADDLE_STARTING_POSITION_X_OFFSET,
-                height / 20.0,
+                width - Paddle::WIDTH + OPPONENT_PADDLE_STARTING_POSITION_X_OFFSET,
+                height / 2.0,
             ),
-            mesh: graphics::Mesh::new_rectangle(
-                ctx,
-                graphics::DrawMode::fill(),
-                Paddle::BOUNDS,
-                Paddle::COLOR,
-            )?,
+            mesh: paddle_mesh,
             speed: Paddle::SPEED,
         };
 
@@ -75,41 +76,15 @@ impl Pong {
     }
 }
 
-fn handle_player_input(ctx: &Context, paddle: &mut Paddle, input: &InputState, desired_fps: u32) {
-    let frame_time: f32 = 1.0 / (desired_fps as f32);
-    let (_drawable_width, drawable_height) = ctx.gfx.drawable_size();
-
-    if input.up {
-        let mut next_pos = vec2(0.0, paddle.position.y - paddle.speed * frame_time);
-
-        if next_pos.y <= 0.0 {
-            next_pos.y = 0.0 + Paddle::DEFAULT_X_OFFSET
-        }
-
-        paddle.position.y = next_pos.y;
-    }
-
-    if input.down {
-        let mut next_pos = vec2(0.0, paddle.position.y + paddle.speed * frame_time);
-
-        if next_pos.y + Paddle::HEIGHT >= drawable_height {
-            next_pos.y = drawable_height - Paddle::HEIGHT - Paddle::DEFAULT_X_OFFSET
-        }
-
-        paddle.position.y = next_pos.y;
-    }
-}
-
 impl EventHandler<GameError> for Pong {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        const DESIRED_FPS: u32 = 60;
+        const TARGET_FPS: u32 = 60;
 
         // https://gameprogrammingpatterns.com/game-loop.html#do-you-own-the-game-loop,-or-does-the-platform
-        while ctx.time.check_update_time(DESIRED_FPS) {
-            handle_player_input(ctx, &mut self.player_paddle, &self.input, DESIRED_FPS);
+        while ctx.time.check_update_time(TARGET_FPS) {
+            handle_player_input(ctx, &mut self.player_paddle, &self.input);
+            handle_ball_movement(ctx, &mut self.ball);
         }
-
-        handle_ball_movement(ctx, &mut self.ball);
 
         Ok(())
     }
@@ -177,20 +152,5 @@ impl EventHandler<GameError> for Pong {
         }
 
         Ok(())
-    }
-}
-
-fn handle_ball_movement(ctx: &mut Context, ball: &mut Ball) {
-    let (width, height) = ctx.gfx.drawable_size();
-
-    ball.position.x += ball.direction.x * ball.speed;
-    ball.position.y += ball.direction.y * ball.speed;
-
-    if ball.position.x + Ball::RADIUS >= width || ball.position.x - Ball::RADIUS <= 0.0 {
-        ball.direction.x *= -1.0;
-    }
-
-    if ball.position.y >= height || ball.position.y <= 0.0 {
-        ball.direction.y *= -1.0;
     }
 }
