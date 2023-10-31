@@ -9,10 +9,11 @@ pub struct Paddle {
 }
 
 impl Paddle {
-    pub const WIDTH: f32 = 15.0;
-    pub const HEIGHT: f32 = 100.0;
+    pub const WIDTH: f32 = 10.0;
+    pub const HEIGHT: f32 = 200.0;
     pub const SPEED: f32 = 25.0;
     pub const COLOR: Color = Color::WHITE;
+    pub const STARTING_POSITION_X_OFFSET: f32 = 50.0;
     pub const BOUNDS: Rect = Rect {
         x: 0.0,
         y: 0.0,

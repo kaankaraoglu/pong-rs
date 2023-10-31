@@ -5,6 +5,7 @@ use ggez::{event, ContextBuilder, GameResult};
 use pong::Pong;
 use utils::get_resource_directory;
 
+mod assets;
 mod ball;
 mod input;
 mod paddle;

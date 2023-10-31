@@ -3,7 +3,7 @@
 [window_mode]
 width = 1000
 height = 1000
-maximized = false
+maximized = true
 fullscreen_type = "Windowed"
 borderless = false
 transparent = false
