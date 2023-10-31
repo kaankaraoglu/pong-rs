@@ -6,16 +6,16 @@ use ggez::graphics::{Canvas, Color, DrawParam, Text};
 use ggez::input::keyboard::{KeyCode, KeyInput};
 use ggez::{graphics, timer, Context, GameError, GameResult};
 
-use crate::assets::Assets;
 use crate::ball::Ball;
 use crate::input::InputState;
 use crate::paddle::Paddle;
-use crate::utils::{handle_ball_movement, handle_collisions, handle_player_input, load_resources};
+use crate::utilities::{
+    handle_ball_movement, handle_collisions, handle_player_input, load_resources,
+};
 
 pub struct Pong {
     frames: usize,
     fps: f64,
-    assets: Assets,
     ball: Ball,
     player_paddle: Paddle,
     opponent_paddle: Paddle,
@@ -26,7 +26,6 @@ impl Pong {
     pub fn new(ctx: &mut Context) -> GameResult<Pong> {
         let (width, height) = ctx.gfx.drawable_size();
         let screen_center_vertical = height / 2.0;
-        let assets = Assets::new().expect("Failed to load assets!");
 
         load_resources(ctx)?;
 
@@ -79,7 +78,6 @@ impl Pong {
         Ok(Pong {
             frames: 0,
             fps: 0.0,
-            assets,
             ball,
             player_paddle,
             opponent_paddle,
