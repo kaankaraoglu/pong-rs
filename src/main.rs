@@ -9,11 +9,11 @@ mod ball;
 mod input;
 mod paddle;
 mod pong;
-mod utilities;
+mod utils;
 
 pub fn main() -> GameResult {
-    let context_builder = ContextBuilder::new(Pong::GAME_ID, Pong::AUTHOR)
-        .add_resource_path(utilities::get_resource_directory());
+    let context_builder = ContextBuilder::new("pong-rust", "Kaan Karaoglu")
+        .add_resource_path(utils::get_resource_directory());
 
     // Create the context and the event loop
     let (mut ctx, event_loop) = context_builder.build()?;

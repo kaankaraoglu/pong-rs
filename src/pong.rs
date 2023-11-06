@@ -9,21 +9,18 @@ use ggez::{graphics, timer, Context, GameError, GameResult};
 use crate::ball::Ball;
 use crate::input::InputState;
 use crate::paddle::Paddle;
-use crate::utilities::{handle_collisions, handle_inputs, load_resources};
+use crate::utils::{handle_collisions, handle_inputs, load_resources};
 
 pub struct Pong {
     frames: usize,
     fps: f64,
     ball: Ball,
     player_paddle: Paddle,
-    npc_paddle: Paddle,
+    opponent_paddle: Paddle,
     input: InputState,
 }
 
 impl Pong {
-    pub const GAME_ID: &'static str = "pong-rust";
-    pub const AUTHOR: &'static str = "Kaan Karaoglu";
-
     pub fn new(ctx: &mut Context) -> GameResult<Pong> {
         let (width, height) = ctx.gfx.drawable_size();
         let screen_center_vertical = height / 2.0;
@@ -42,13 +39,12 @@ impl Pong {
 
         // Create the ball
         let ball = Ball {
-            position: vec2(
-                Paddle::STARTING_POSITION_X_OFFSET + Paddle::WIDTH / 2.0,
-                0.0, //width / 2.0,
-                     //height / 2.0 - 30.0,
-            ),
             mesh: ball_mesh,
             direction: vec2(0.0, 1.0),
+            position: vec2(
+                Paddle::STARTING_POSITION_X_OFFSET + Paddle::WIDTH / 2.0,
+                0.0,
+            ),
         };
 
         // Create the paddles' mesh
@@ -61,19 +57,19 @@ impl Pong {
 
         // Create player's paddle
         let player_paddle = Paddle {
+            mesh: paddle_mesh.clone(),
             position: vec2(
                 Paddle::STARTING_POSITION_X_OFFSET,
                 screen_center_vertical - Paddle::HEIGHT / 2.0,
             ),
-            mesh: paddle_mesh.clone(),
         };
 
-        let npc_paddle = Paddle {
+        let opponent_paddle = Paddle {
+            mesh: paddle_mesh,
             position: vec2(
                 width - Paddle::STARTING_POSITION_X_OFFSET - Paddle::WIDTH,
                 screen_center_vertical - Paddle::HEIGHT / 2.0,
             ),
-            mesh: paddle_mesh,
         };
 
         Ok(Pong {
@@ -81,7 +77,7 @@ impl Pong {
             fps: 0.0,
             ball,
             player_paddle,
-            npc_paddle,
+            opponent_paddle,
             input: Default::default(),
         })
     }
@@ -97,8 +93,8 @@ impl Pong {
         canvas.draw(&self.player_paddle.mesh, self.player_paddle.position);
     }
 
-    fn draw_npc_paddle(&mut self, canvas: &mut Canvas) {
-        canvas.draw(&self.npc_paddle.mesh, self.npc_paddle.position);
+    fn draw_opponent_paddle(&mut self, canvas: &mut Canvas) {
+        canvas.draw(&self.opponent_paddle.mesh, self.opponent_paddle.position);
     }
 
     fn draw_fps_counter(&mut self, ctx: &mut Context, canvas: &mut Canvas) {
@@ -128,7 +124,7 @@ impl EventHandler<GameError> for Pong {
             handle_inputs(
                 ctx,
                 &mut self.player_paddle,
-                &mut self.npc_paddle,
+                &mut self.opponent_paddle,
                 &self.input,
             );
 
@@ -138,7 +134,7 @@ impl EventHandler<GameError> for Pong {
                 ctx,
                 &mut self.ball,
                 &mut self.player_paddle,
-                &mut self.npc_paddle,
+                &mut self.opponent_paddle,
             );
         }
 
@@ -150,7 +146,7 @@ impl EventHandler<GameError> for Pong {
 
         self.draw_ball(&mut canvas);
         self.draw_player_paddle(&mut canvas);
-        self.draw_npc_paddle(&mut canvas);
+        self.draw_opponent_paddle(&mut canvas);
         self.draw_fps_counter(ctx, &mut canvas);
 
         // Render!
@@ -187,7 +183,7 @@ impl EventHandler<GameError> for Pong {
             Some(KeyCode::Escape) => {
                 ctx.request_quit();
             }
-            _ => (), // Do nothing
+            _ => (),
         }
         Ok(())
     }
@@ -195,13 +191,20 @@ impl EventHandler<GameError> for Pong {
     fn key_up_event(&mut self, _ctx: &mut Context, input: KeyInput) -> GameResult {
         // When any key is lifted, we set that key to false,
         // because we want paddles to stop moving.
-        if let Some(KeyCode::Up | KeyCode::Down) = input.keycode {
-            self.input.up = false;
-            self.input.down = false;
-        }
-        if let Some(KeyCode::W | KeyCode::S) = input.keycode {
-            self.input.key_w = false;
-            self.input.key_s = false;
+        match input.keycode {
+            Some(KeyCode::Up) => {
+                self.input.up = false;
+            }
+            Some(KeyCode::Down) => {
+                self.input.down = false;
+            }
+            Some(KeyCode::W) => {
+                self.input.key_w = false;
+            }
+            Some(KeyCode::S) => {
+                self.input.key_s = false;
+            }
+            _ => (),
         }
         Ok(())
     }
