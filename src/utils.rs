@@ -32,24 +32,24 @@ pub fn load_resources(ctx: &mut Context) -> Result<(), GameError> {
 pub fn handle_inputs(
     ctx: &Context,
     player_paddle: &mut Paddle,
-    npc_paddle: &mut Paddle,
+    opponent_paddle: &mut Paddle,
     input: &InputState,
 ) {
     let (_drawable_width, drawable_height) = ctx.gfx.drawable_size();
 
     // PLAYER PADDLE MOVEMENTS.
     if input.up {
-        npc_paddle.position.y = f32::max(npc_paddle.position.y - Paddle::SPEED, 0.0);
+        opponent_paddle.position.y = f32::max(opponent_paddle.position.y - Paddle::SPEED, 0.0);
     }
 
     if input.down {
-        npc_paddle.position.y = f32::min(
-            npc_paddle.position.y + Paddle::SPEED,
+        opponent_paddle.position.y = f32::min(
+            opponent_paddle.position.y + Paddle::SPEED,
             drawable_height - Paddle::HEIGHT,
         );
     }
 
-    // NPC PADDLE MOVEMENTS.
+    // PLAYER PADDLE MOVEMENTS.
     if input.key_w {
         player_paddle.position.y = f32::max(player_paddle.position.y - Paddle::SPEED, 0.0);
     }
@@ -66,16 +66,16 @@ pub fn handle_collisions(
     ctx: &mut Context,
     ball: &mut Ball,
     player_paddle: &mut Paddle,
-    npc_paddle: &mut Paddle,
+    opponent_paddle: &mut Paddle,
 ) {
     // HANDLE PLAYER'S PADDLE COLLISIONS.
     if check_for_collision(ball, player_paddle) {
         handle_paddle_collision(ball, player_paddle, -1.0);
     }
 
-    // HANDLE NPC'S PADDLE COLLISIONS.
-    if check_for_collision(ball, npc_paddle) {
-        handle_paddle_collision(ball, npc_paddle, 1.0);
+    // HANDLE OPPONENT'S PADDLE COLLISIONS.
+    if check_for_collision(ball, opponent_paddle) {
+        handle_paddle_collision(ball, opponent_paddle, 1.0);
     }
 
     // HANDLE THE CASE WHERE THE BALL HITS ANY EDGE OF THE SCREEN.
