@@ -8,7 +8,7 @@ pub struct Ball {
 }
 
 impl Ball {
-    pub const SPEED: f32 = 15.0;
+    pub const SPEED: f32 = 25.0;
     pub const RADIUS: f32 = 12.0;
     pub const MESH_TOLERANCE: f32 = 0.2;
     pub const COLOR: Color = Color::RED;
