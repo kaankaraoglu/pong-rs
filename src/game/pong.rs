@@ -6,18 +6,19 @@ use ggez::graphics::{Canvas, Color, DrawParam, Text};
 use ggez::input::keyboard::{KeyCode, KeyInput};
 use ggez::{graphics, timer, Context, GameError, GameResult};
 
-use crate::ball::Ball;
-use crate::input::InputState;
-use crate::paddle::Paddle;
-use crate::utils::{handle_collisions, handle_inputs, load_resources};
+use crate::game::ball::Ball;
+use crate::game::paddle::Paddle;
+use crate::game::utils::{handle_collisions, handle_inputs, load_resources};
+use crate::input::input_state::InputState;
 
 pub struct Pong {
-    frames: usize,
     fps: f64,
+    frame_count: usize,
+    is_menu_visible: bool,
+    input: InputState,
     ball: Ball,
     player_paddle: Paddle,
     opponent_paddle: Paddle,
-    input: InputState,
 }
 
 impl Pong {
@@ -73,12 +74,13 @@ impl Pong {
         };
 
         Ok(Pong {
-            frames: 0,
+            frame_count: 0,
             fps: 0.0,
             ball,
             player_paddle,
             opponent_paddle,
             input: Default::default(),
+            is_menu_visible: true,
         })
     }
 
@@ -98,8 +100,8 @@ impl Pong {
     }
 
     fn draw_fps_counter(&mut self, ctx: &mut Context, canvas: &mut Canvas) {
-        self.frames += 1;
-        if (self.frames % 25) == 0 {
+        self.frame_count += 1;
+        if (self.frame_count % 25) == 0 {
             self.fps = ctx.time.fps().floor();
         }
 
@@ -120,29 +122,32 @@ impl EventHandler<GameError> for Pong {
         const TARGET_FPS: u32 = 60;
 
         // https://gameprogrammingpatterns.com/game-loop.html#do-you-own-the-game-loop,-or-does-the-platform
-        while ctx.time.check_update_time(TARGET_FPS) {
-            handle_inputs(
-                ctx,
-                &mut self.player_paddle,
-                &mut self.opponent_paddle,
-                &self.input,
-            );
+        if !self.is_menu_visible {
+            while ctx.time.check_update_time(TARGET_FPS) {
+                handle_inputs(
+                    ctx,
+                    &mut self.player_paddle,
+                    &mut self.opponent_paddle,
+                    &self.input,
+                );
 
-            self.ball.move_one_step();
+                self.ball.move_one_step();
 
-            handle_collisions(
-                ctx,
-                &mut self.ball,
-                &mut self.player_paddle,
-                &mut self.opponent_paddle,
-            );
+                handle_collisions(
+                    ctx,
+                    &mut self.ball,
+                    &mut self.player_paddle,
+                    &mut self.opponent_paddle,
+                );
+            }
         }
 
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        let mut canvas = Canvas::from_frame(ctx, graphics::Color::from([0.1, 0.2, 0.3, 1.0]));
+        // Alternative frame color: graphics::Color::from([0.1, 0.2, 0.3, 1.0])
+        let mut canvas = Canvas::from_frame(ctx, Color::BLACK);
 
         self.draw_ball(&mut canvas);
         self.draw_player_paddle(&mut canvas);
@@ -180,6 +185,9 @@ impl EventHandler<GameError> for Pong {
             Some(KeyCode::S) => {
                 self.input.key_s = true;
             }
+            Some(KeyCode::Space) => {
+                self.input.key_space = true;
+            }
             Some(KeyCode::Escape) => {
                 ctx.request_quit();
             }
@@ -203,6 +211,9 @@ impl EventHandler<GameError> for Pong {
             }
             Some(KeyCode::S) => {
                 self.input.key_s = false;
+            }
+            Some(KeyCode::Space) => {
+                self.input.key_space = false;
             }
             _ => (),
         }

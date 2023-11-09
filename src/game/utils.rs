@@ -5,9 +5,9 @@ use ggez::glam::vec2;
 use ggez::graphics::FontData;
 use ggez::{Context, GameError};
 
-use crate::ball::Ball;
-use crate::input::InputState;
-use crate::paddle::Paddle;
+use crate::game::ball::Ball;
+use crate::game::paddle::Paddle;
+use crate::input::input_state::InputState;
 
 pub fn get_resource_directory() -> PathBuf {
     // We add the CARGO_MANIFEST_DIR/resources to the resource paths

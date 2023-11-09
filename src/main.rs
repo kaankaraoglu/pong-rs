@@ -1,15 +1,12 @@
+mod game;
+mod input;
+
 extern crate ggez;
 
+use crate::game::pong::Pong;
+use crate::game::utils;
 use ggez::event::run;
 use ggez::{ContextBuilder, GameResult};
-
-use pong::Pong;
-
-mod ball;
-mod input;
-mod paddle;
-mod pong;
-mod utils;
 
 pub fn main() -> GameResult {
     let context_builder = ContextBuilder::new("pong-rs", "Kaan Karaoglu")
