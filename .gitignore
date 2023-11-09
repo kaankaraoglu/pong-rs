@@ -13,8 +13,34 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
-# IDEA Rustrover
-.idea
-
 # Added by cargo
 /target
+
+## File system
+.DS_Store
+desktop.ini
+
+## Editor
+.idea
+*.swp
+*.swo
+Session.vim
+.cproject
+*.iml
+.vscode
+.project
+.favorites.json
+.settings/
+.vs/
+
+## Temporary files
+*~
+\#*
+\#*\#
+.#*
+
+## Tags
+tags
+tags.*
+TAGS
+TAGS.*
