@@ -2,7 +2,7 @@
 
 # 🧶 pong-rs
 
-**Pong-rs is a simple game written in Rust using the [ggez](https://github.com/ggez/ggez) library. Personal project to learn Rust and core game development concepts.**
+**Pong-rs is a simple game written in Rust using the [ggez](https://github.com/ggez/ggez) library. It's a personal project to learn Rust and core game development concepts.**
 
 </div>
 
@@ -15,6 +15,9 @@
 - **Player 2 (Right Paddle):**
     - Up: Move the paddle up
     - Down: Move the paddle down
+
+- **Space key starts the game.**
+- **Escape Key quits the game.**
 
 ## Requirements
 
