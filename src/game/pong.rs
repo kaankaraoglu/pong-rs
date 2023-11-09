@@ -14,7 +14,6 @@ use crate::input::input_state::InputState;
 pub struct Pong {
     fps: f64,
     frame_count: usize,
-    is_menu_visible: bool,
     input: InputState,
     ball: Ball,
     player_paddle: Paddle,
@@ -80,7 +79,6 @@ impl Pong {
             player_paddle,
             opponent_paddle,
             input: Default::default(),
-            is_menu_visible: true,
         })
     }
 
@@ -122,24 +120,22 @@ impl EventHandler<GameError> for Pong {
         const TARGET_FPS: u32 = 60;
 
         // https://gameprogrammingpatterns.com/game-loop.html#do-you-own-the-game-loop,-or-does-the-platform
-        if !self.is_menu_visible {
-            while ctx.time.check_update_time(TARGET_FPS) {
-                handle_inputs(
-                    ctx,
-                    &mut self.player_paddle,
-                    &mut self.opponent_paddle,
-                    &self.input,
-                );
+        while ctx.time.check_update_time(TARGET_FPS) {
+            handle_inputs(
+                ctx,
+                &mut self.player_paddle,
+                &mut self.opponent_paddle,
+                &self.input,
+            );
 
-                self.ball.move_one_step();
+            self.ball.move_one_step();
 
-                handle_collisions(
-                    ctx,
-                    &mut self.ball,
-                    &mut self.player_paddle,
-                    &mut self.opponent_paddle,
-                );
-            }
+            handle_collisions(
+                ctx,
+                &mut self.ball,
+                &mut self.player_paddle,
+                &mut self.opponent_paddle,
+            );
         }
 
         Ok(())
