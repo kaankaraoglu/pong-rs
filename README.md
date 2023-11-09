@@ -2,8 +2,7 @@
 
 # 🧶 pong-rs
 
-**Pong-rs is a super simple game written in Rust using the [ggez](https://github.com/ggez/ggez) game framework. It's a
-personal project created for learning Rust and fundamentals of game development in general.**
+**Pong-rs is a simple game written in Rust using the [ggez](https://github.com/ggez/ggez) library. Personal project to learn Rust and core game development concepts.**
 
 </div>
 
