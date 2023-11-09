@@ -7,6 +7,7 @@ use ggez::{Context, GameError};
 
 use crate::game::ball::Ball;
 use crate::game::paddle::Paddle;
+use crate::game::player::Player;
 use crate::input::input_state::InputState;
 
 pub fn get_resource_directory() -> PathBuf {
@@ -31,32 +32,32 @@ pub fn load_resources(ctx: &mut Context) -> Result<(), GameError> {
 
 pub fn handle_inputs(
     ctx: &Context,
-    player_paddle: &mut Paddle,
-    opponent_paddle: &mut Paddle,
+    player_one_paddle: &mut Paddle,
+    player_two_paddle: &mut Paddle,
     input: &InputState,
 ) {
     let (_drawable_width, drawable_height) = ctx.gfx.drawable_size();
 
-    // PLAYER PADDLE MOVEMENTS.
-    if input.up {
-        opponent_paddle.position.y = f32::max(opponent_paddle.position.y - Paddle::SPEED, 0.0);
+    // PLAYER ONE PADDLE MOVEMENTS.
+    if input.key_w {
+        player_one_paddle.position.y = f32::max(player_one_paddle.position.y - Paddle::SPEED, 0.0);
     }
 
-    if input.down {
-        opponent_paddle.position.y = f32::min(
-            opponent_paddle.position.y + Paddle::SPEED,
+    if input.key_s {
+        player_one_paddle.position.y = f32::min(
+            player_one_paddle.position.y + Paddle::SPEED,
             drawable_height - Paddle::HEIGHT,
         );
     }
 
-    // PLAYER PADDLE MOVEMENTS.
-    if input.key_w {
-        player_paddle.position.y = f32::max(player_paddle.position.y - Paddle::SPEED, 0.0);
+    // PLAYER TWO PADDLE MOVEMENTS.
+    if input.up {
+        player_two_paddle.position.y = f32::max(player_two_paddle.position.y - Paddle::SPEED, 0.0);
     }
 
-    if input.key_s {
-        player_paddle.position.y = f32::min(
-            player_paddle.position.y + Paddle::SPEED,
+    if input.down {
+        player_two_paddle.position.y = f32::min(
+            player_two_paddle.position.y + Paddle::SPEED,
             drawable_height - Paddle::HEIGHT,
         );
     }
@@ -65,25 +66,49 @@ pub fn handle_inputs(
 pub fn handle_collisions(
     ctx: &mut Context,
     ball: &mut Ball,
-    player_paddle: &mut Paddle,
-    opponent_paddle: &mut Paddle,
+    player_one: &mut Player,
+    player_two: &mut Player,
+    turn_active: &mut bool,
+    game_over: &mut bool,
 ) {
-    // HANDLE PLAYER'S PADDLE COLLISIONS.
-    if check_for_collision(ball, player_paddle) {
-        handle_paddle_collision(ball, player_paddle, -1.0);
+    // HANDLE PLAYER ONE PADDLE COLLISIONS.
+    if check_paddle_to_ball_collision(&mut player_one.paddle, ball) {
+        handle_paddle_collision(&mut player_one.paddle, ball, -1.0);
     }
 
-    // HANDLE OPPONENT'S PADDLE COLLISIONS.
-    if check_for_collision(ball, opponent_paddle) {
-        handle_paddle_collision(ball, opponent_paddle, 1.0);
+    // HANDLE PLAYER TWO PADDLE COLLISIONS.
+    if check_paddle_to_ball_collision(&mut player_two.paddle, ball) {
+        handle_paddle_collision(&mut player_two.paddle, ball, 1.0);
     }
 
-    // HANDLE THE CASE WHERE THE BALL HITS ANY EDGE OF THE SCREEN.
-    handle_wall_collisions(ctx, ball);
+    // HANDLE THE CASE WHERE THE BALL HITS FLOOR OR THE CEILING.
+    handle_floor_and_ceiling_collisions(ctx, ball);
+
+    // HANDLE THE CASE WHERE THE BALL HITS THE SIDE WALLS.
+    handle_side_wall_collisions(ctx, ball, player_one, player_two, turn_active, game_over);
 }
 
-fn check_for_collision(ball: &mut Ball, paddle: &mut Paddle) -> bool {
-    let mut is_collision = false;
+fn handle_side_wall_collisions(
+    ctx: &mut Context,
+    ball: &mut Ball,
+    player_one: &mut Player,
+    player_two: &mut Player,
+    turn_active: &mut bool,
+    game_over: &mut bool,
+) {
+    let (width, _height) = ctx.gfx.drawable_size();
+
+    if ball.position.x + Ball::RADIUS >= width {
+        player_one.scored = true;
+        process_win(player_one, player_two, ctx, ball, turn_active, game_over);
+    } else if ball.position.x - Ball::RADIUS <= 0.0 {
+        player_two.scored = true;
+        process_win(player_one, player_two, ctx, ball, turn_active, game_over);
+    }
+}
+
+fn check_paddle_to_ball_collision(paddle: &mut Paddle, ball: &mut Ball) -> bool {
+    let mut is_colliding = false;
     let ball_center = ball.get_center_position();
     let paddle_center = paddle.get_center_position();
     let mut distance_between = ball_center - paddle_center;
@@ -103,13 +128,13 @@ fn check_for_collision(ball: &mut Ball, paddle: &mut Paddle) -> bool {
     let closest_point = paddle_center + clamped;
     distance_between = closest_point - ball_center;
     if f32::abs(distance_between.x) < Ball::RADIUS && f32::abs(distance_between.y) < Ball::RADIUS {
-        is_collision = true;
+        is_colliding = true;
     }
 
-    is_collision
+    is_colliding
 }
 
-fn handle_paddle_collision(ball: &mut Ball, paddle: &mut Paddle, top_hit_angle_inversion: f32) {
+fn handle_paddle_collision(paddle: &mut Paddle, ball: &mut Ball, top_hit_angle_inversion: f32) {
     let relative_intersection_y =
         paddle.position.y + Paddle::HEIGHT / 2.0 - ball.position.y - Ball::RADIUS;
 
@@ -120,20 +145,80 @@ fn handle_paddle_collision(ball: &mut Ball, paddle: &mut Paddle, top_hit_angle_i
     ball.direction.y = f32::sin(bounce_angle);
 }
 
-pub fn handle_wall_collisions(ctx: &mut Context, ball: &mut Ball) {
-    let (width, height) = ctx.gfx.drawable_size();
-
-    // BALL COLLISION WITH FLOOR AND CEILING.
+fn handle_floor_and_ceiling_collisions(ctx: &mut Context, ball: &mut Ball) {
+    let (_width, height) = ctx.gfx.drawable_size();
     if ball.position.y >= height || ball.position.y <= 0.0 {
         ball.direction.y *= -1.0;
-        return;
+    }
+}
+
+fn restart_round(
+    ctx: &mut Context,
+    ball: &mut Ball,
+    player_one: &mut Player,
+    player_two: &mut Player,
+    turn_active: &mut bool,
+) {
+    let (width, height) = ctx.gfx.drawable_size();
+
+    // DEACTIVATE THE TURN
+    *turn_active = false;
+
+    // RESET THE PADDLE POSITIONS.
+    player_one.paddle.position = vec2(
+        Paddle::STARTING_POSITION_X_OFFSET,
+        height / 2.0 - Paddle::HEIGHT / 2.0,
+    );
+
+    player_two.paddle.position = vec2(
+        width - Paddle::STARTING_POSITION_X_OFFSET - Paddle::WIDTH,
+        height / 2.0 - Paddle::HEIGHT / 2.0,
+    );
+
+    // RESET THE BALL POSITION ACCORDING TO THIS TURN'S WINNER.
+    if player_one.scored {
+        ball.position = vec2(
+            Paddle::STARTING_POSITION_X_OFFSET + Paddle::WIDTH + Ball::RADIUS,
+            height / 2.0,
+        );
+        ball.direction = vec2(1.0, 0.0);
     }
 
-    // BALL COLLISION WITH THE SIDE WALLS
-    // TODO KAAN: Reset the ball to the default position. Extract Life OR end game.
-    if ball.position.x + Ball::RADIUS >= width || ball.position.x - Ball::RADIUS <= 0.0 {
-        ball.position.x = width / 2.0;
-        ball.position.y = height / 2.0;
-        ctx.request_quit()
+    if player_two.scored {
+        ball.position = vec2(
+            width - Paddle::STARTING_POSITION_X_OFFSET - Paddle::WIDTH - Ball::RADIUS,
+            height / 2.0,
+        );
+        ball.direction = vec2(-1.0, 0.0);
+    }
+
+    player_one.scored = false;
+    player_two.scored = false;
+}
+
+fn process_win(
+    player_one: &mut Player,
+    player_two: &mut Player,
+    ctx: &mut Context,
+    ball: &mut Ball,
+    turn_active: &mut bool,
+    game_over: &mut bool,
+) {
+    if player_one.scored {
+        if player_two.life > 0 {
+            player_two.decrease_life();
+            restart_round(ctx, ball, player_one, player_two, turn_active);
+        } else {
+            *turn_active = false;
+            *game_over = true;
+        }
+    } else if player_two.scored {
+        if player_one.life > 0 {
+            player_one.decrease_life();
+            restart_round(ctx, ball, player_one, player_two, turn_active);
+        } else {
+            *turn_active = false;
+            *game_over = true;
+        }
     }
 }
